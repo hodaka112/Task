@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Login</title>
+    <style>
+        /* --- GLOBAL THEME & BACKGROUND SETTINGS --- */
+        :root {
+            /* Image URL is injected by JavaScript */
+            --box-background-color: rgba(69, 49, 49, 0.95); 
+            --input-background-color: rgba(94, 66, 66, 0.8);
+            --accent-color: #ffb800; 
+            --main-text-color: #f0f0f0;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--main-text-color);
+            /* Uses the property set by JavaScript */
+            background-image: url(lib.jpg);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-blend-mode: multiply;
+            background-color: rgba(0, 0, 0, 0.6); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .auth-box {
+            background: var(--box-background-color); padding: 40px;
+            border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            width: 350px; text-align: center;
+        }
+        h2 { color: var(--accent-color); margin-bottom: 25px; text-shadow: 1px 1px 3px #000; }
+        input, select { 
+            background: var(--input-background-color); color: var(--main-text-color);
+            padding: 12px; border: 1px solid #777; border-radius: 6px; 
+            box-sizing: border-box; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        input, select { width: 90%; margin: 10px 0 15px 0; }
+        select { width: 95%; }
+        select option { background-color: #333; color: var(--main-text-color);}
+        
+        button { background-color: var(--accent-color); color: #333; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; font-weight: bold; transition: background-color 0.3s; }
+        button:hover { background-color: #ffcc44; }
+        .link { color: var(--accent-color); cursor: pointer; text-decoration: none; margin-top: 15px; display: block; text-align: center; }
+        #message { color: #dc3545; font-weight: bold; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <h2>🔒 Library Login</h2>
+        <p>Sign in to access your system.</p>
+        
+        <input type="email" id="email-input" placeholder="Email">
+        <input type="password" id="password-input" placeholder="Password">
+        
+        <select id="login-role" onkeydown="if(event.key=='Enter') handleLogin()">
+            <option value="">-- Select Role --</option>
+            <option value="Student">Student</option>
+            <option value="Admin">Admin</option>
+        </select>
+
+        <button onclick="handleLogin()">Login</button>
+        
+        <div id="message"></div>
+        <a class="link" href="signup.html">Need an account? Sign Up.</a>
+        <a class="link" onclick="alert('Password reset is not supported in this local demo.')">Forgot Password?</a>
+    </div>
+
+    <script>
+        const USER_ACCOUNT_KEY = 'todoUserAccount';
+        const TOKEN_KEY = 'authToken';
+        const ROLE_KEY = 'userRole';
+        const LOGGED_IN_USER_KEY = 'loggedInUser'; 
+
+        // --- PHOTO CHANGE CONSTANT ---
+        const APP_BACKGROUND_IMAGE = 'lib.jpeg'; 
+
+        function setAppBackground() {
+            document.documentElement.style.setProperty('--app-bg-url', `url('${APP_BACKGROUND_IMAGE}')`);
+        }
+        // -----------------------------
+
+        // Check for persistent session and redirect
+        const currentRole = localStorage.getItem(ROLE_KEY);
+        if (localStorage.getItem(TOKEN_KEY) === 'valid') {
+              if (currentRole === 'Admin') {
+                  window.location.href = 'admin_dashboard.html'; 
+              } else if (currentRole === 'Student') {
+                  window.location.href = 'Student_System.html'; 
+              }
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('email-input').value.trim();
+            const password = document.getElementById('password-input').value;
+            const selectedRole = document.getElementById('login-role').value;
+            const messageDiv = document.getElementById('message');
+
+            const storedUsersRaw = localStorage.getItem(USER_ACCOUNT_KEY);
+            const users = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+
+            if (users.length === 0) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = "No accounts found. Please sign up first.";
+                return;
+            }
+
+            if (!selectedRole) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = "Please select a role.";
+                return;
+            }
+            
+            const matchingUser = users.find(user => 
+                user.email === email && 
+                user.password === password && 
+                user.role === selectedRole
+            );
+
+            if (matchingUser) {
+                
+                localStorage.setItem(TOKEN_KEY, 'valid');
+                localStorage.setItem(ROLE_KEY, selectedRole);
+                localStorage.setItem(LOGGED_IN_USER_KEY, JSON.stringify(matchingUser));
+                
+                messageDiv.style.color = 'green';
+                messageDiv.textContent = `Login successful as ${selectedRole}! Loading dashboard...`;
+                
+                setTimeout(() => {
+                    if (selectedRole === 'Admin') {
+                        window.location.href = 'admin_dashboard.html';
+                    } else {
+                        window.location.href = 'Student_System.html'; 
+                    }
+                }, 500);
+            } else {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = "Invalid credentials or incorrect role selected.";
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', setAppBackground);
+    </script>
+</body>
+</html>

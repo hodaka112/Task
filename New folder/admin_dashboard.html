@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | User Accounts</title>
+    <style>
+        /* --- GLOBAL THEME & BACKGROUND SETTINGS --- */
+        :root {
+            /* Image URL is injected by JavaScript */
+            --box-background-color: rgba(69, 49, 49, 0.9); 
+            --accent-color: #ffb800; 
+            --main-text-color: #f0f0f0;
+            --navbar-bg: rgba(60, 40, 40, 0.95);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            color: var(--main-text-color);
+            /* Uses the property set by JavaScript */
+            background-image: url(lib.jpg); 
+            background-size: cover;
+            background-attachment: fixed; background-repeat: no-repeat;
+            background-position: center center; background-blend-mode: multiply;
+            background-color: rgba(0, 0, 0, 0.6); 
+            margin: 0; 
+            padding: 0;
+        }
+        .navbar { background-color: var(--navbar-bg); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; color: var(--main-text-color); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);}
+        .navbar .logo { font-size: 24px; font-weight: bold; color: var(--accent-color); }
+        .navbar a { color: var(--main-text-color); text-decoration: none; padding: 8px 15px; border-radius: 4px; transition: background-color 0.3s; }
+        .navbar a:hover { background-color: rgba(255, 255, 255, 0.1); color: var(--accent-color); }
+        .container { max-width: 1000px; margin: 40px auto; background: var(--box-background-color); padding: 30px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
+        h1 { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 5px; margin-top: 0; }
+        p { color: var(--main-text-color); }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border: 1px solid rgba(255, 255, 255, 0.1); }
+        th { background-color: rgba(255, 184, 0, 0.5); color: #333; font-weight: bold; }
+        td { color: var(--main-text-color); }
+        .no-records { text-align: center; padding: 20px; color: #dc3545; font-weight: bold; }
+        .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
+        .delete-btn:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+    <script>
+        const TOKEN_KEY = 'authToken';
+        const ROLE_KEY = 'userRole';
+        const USER_ACCOUNT_KEY = 'todoUserAccount';
+        const LOGGED_IN_USER_KEY = 'loggedInUser';
+        const TASKS_KEY = 'studentTasks'; 
+
+        // --- PHOTO CHANGE CONSTANT ---
+        const APP_BACKGROUND_IMAGE = 'lib.jpeg'; 
+
+        function setAppBackground() {
+            document.documentElement.style.setProperty('--app-bg-url', `url('${APP_BACKGROUND_IMAGE}')`);
+        }
+        // -----------------------------
+
+        const isLoggedIn = localStorage.getItem(TOKEN_KEY) === 'valid';
+        const userRole = localStorage.getItem(ROLE_KEY);
+
+        // Enforce Admin Access
+        if (!isLoggedIn || userRole !== 'Admin') {
+            alert('Access Denied. Please log in as an Admin.');
+            window.location.href = 'Login.html'; 
+        }
+    </script>
+    
+    <nav class="navbar">
+        <div class="logo">Admin Console</div>
+        <a href="javascript:void(0)" onclick="logout()">🚪 Logout</a>
+    </nav>
+
+    <div class="container">
+        <h1>👥 System User Accounts</h1>
+        <p>This panel displays all user accounts created via the signup page.</p>
+
+        <table id="userRecordsTable">
+            <tr>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Student ID</th>
+                <th>Course</th>
+                <th>Birthday</th>
+                <th>Actions</th> 
+            </tr>
+        </table>
+        
+        <div id="statusMessage" class="no-records" style="display:none;">
+            No user accounts found. Please ensure a user signs up first via signup.html.
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                localStorage.removeItem(TOKEN_KEY);
+                localStorage.removeItem(ROLE_KEY);
+                localStorage.removeItem(LOGGED_IN_USER_KEY);
+                window.location.href = 'Login.html';
+            }
+        }
+
+        function deleteUser(emailToDelete) {
+            
+            const storedUsersRaw = localStorage.getItem(USER_ACCOUNT_KEY);
+            let users = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+
+            if (confirm(`⚠️ WARNING: This will permanently delete the account for ${emailToDelete}. Continue?`)) {
+                
+                const updatedUsers = users.filter(user => user.email !== emailToDelete);
+                localStorage.setItem(USER_ACCOUNT_KEY, JSON.stringify(updatedUsers));
+                
+                alert(`User ${emailToDelete} deleted successfully.`);
+                displayUserRecord(); 
+                
+                const loggedInEmail = JSON.parse(localStorage.getItem(LOGGED_IN_USER_KEY))?.email;
+                if (loggedInEmail === emailToDelete) {
+                     logout();
+                }
+            }
+        }
+
+        function displayUserRecord() {
+            const table = document.getElementById("userRecordsTable");
+            const statusMessage = document.getElementById("statusMessage");
+            const storedUsersRaw = localStorage.getItem(USER_ACCOUNT_KEY);
+
+            const rows = table.querySelectorAll('tr:not(:first-child)');
+            rows.forEach(row => row.remove());
+            statusMessage.style.display = 'none';
+
+            const users = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+
+            if (users.length === 0) {
+                statusMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                users.forEach(user => {
+                    const row = table.insertRow(-1); 
+                    row.insertCell(0).textContent = user.fullName || 'N/A';
+                    row.insertCell(1).textContent = user.email || 'N/A';
+                    row.insertCell(2).textContent = user.role || 'N/A';
+                    row.insertCell(3).textContent = user.studentId || 'N/A'; 
+                    row.insertCell(4).textContent = user.course || 'N/A';    
+                    row.insertCell(5).textContent = user.birthday || 'N/A';
+                    
+                    const actionCell = row.insertCell(6);
+                    actionCell.innerHTML = `<button class="delete-btn" onclick="deleteUser('${user.email}')">Delete Account</button>`;
+                });
+
+            } catch (e) {
+                console.error("Error parsing stored user data:", e);
+                statusMessage.textContent = "Error loading user data format.";
+                statusMessage.style.display = 'block';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+             setAppBackground();
+             displayUserRecord();
+        });
+    </script>
+</body>
+</html>

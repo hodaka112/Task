@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student To-Do System</title>
+    <style>
+        /* --- GLOBAL THEME & BACKGROUND SETTINGS --- */
+        :root {
+            /* Image URL is injected by JavaScript */
+            --main-text-color: #fff;
+            --box-background-color: rgba(69, 49, 49, 0.7); 
+            --input-background-color: rgba(94, 66, 66, 0.8); 
+            --accent-color: #ffb800; 
+            --soft-white: #f0f0f0;
+            --navbar-bg: rgba(60, 40, 40, 0.95);
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; padding: 0; color: var(--main-text-color);
+            /* Uses the property set by JavaScript */
+            background-image: url(lib.jpg);
+            background-size: cover;
+            background-attachment: fixed; background-repeat: no-repeat;
+            background-position: center center; background-blend-mode: multiply;
+            background-color: rgba(0, 0, 0, 0.6); 
+        }
+        .navbar { background-color: var(--navbar-bg); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);}
+        .navbar .logo { font-size: 24px; font-weight: bold; color: var(--accent-color); }
+        .navbar-nav { display: flex; }
+        .navbar a { color: var(--soft-white); text-decoration: none; padding: 10px 18px; border-radius: 6px; transition: background-color 0.3s, color 0.3s; margin-left: 10px; font-weight: 600;}
+        .navbar a:hover { background-color: rgba(255, 255, 255, 0.1); color: var(--accent-color); }
+        .navbar a.active { background-color: var(--accent-color); color: #333; box-shadow: 0 0 10px rgba(255, 184, 0, 0.5);}
+        .container { max-width: 1000px; margin: 30px auto; padding: 20px; background: none; box-shadow: none;}
+        .content-section { background: var(--box-background-color); padding: 30px; border-radius: 12px; margin-top: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);}
+        h2 { font-size: 2.2em; font-weight: 700; text-align: center; color: var(--soft-white); text-shadow: 1px 1px 3px #000; margin-bottom: 5px;}
+        .content-section p { color: var(--soft-white); text-align: center; margin-bottom: 20px;}
+        .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 20px; }
+        .dashboard-card { background: var(--input-background-color); padding: 20px 15px; border-radius: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+        .dashboard-card h3 { color: var(--soft-white); margin: 0 0 10px 0; font-size: 1.1em; }
+        .dashboard-card .value { font-size: 2.5em; font-weight: bold; }
+        #totalTasks { color: #3498db; }
+        #completedTasks { color: #2ecc71; } 
+        #pendingTasks { color: #e74c3c; } 
+        #taskProgress { color: var(--accent-color); } 
+        .task-list, .history-list { list-style: none; padding: 0; }
+        .task-item { background: var(--input-background-color); border-left: 5px solid #777; padding: 15px; margin-bottom: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.3s;}
+        .task-item:hover { background-color: rgba(94, 66, 66, 0.9);}
+        .task-item.completed { background-color: rgba(40, 60, 40, 0.8); border-left: 5px solid #2ecc71; opacity: 0.8;}
+        .task-details { flex-grow: 1; color: var(--soft-white); }
+        .task-details strong { font-size: 1.1em; }
+        .task-details div { font-size: 0.85em; color: #ccc; margin-top: 5px; }
+        .priority-label { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-right: 10px; text-shadow: none; color: #333;}
+        .priority-label.High { background-color: #e74c3c; color: white; }
+        .priority-label.Medium { background-color: #f39c12; }
+        .priority-label.Low { background-color: #3498db; color: white; }
+        .task-actions button { margin-left: 10px; padding: 10px 10px; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 1.1em; background: transparent; transition: opacity 0.2s; opacity: 0.7;}
+        .task-actions button:hover { opacity: 1; }
+        .task-actions .complete-btn { color: #2ecc71; font-size: 1.5em; }
+        .task-actions .delete-btn { color: #e74c3c; font-size: 1.5em; }
+        .history-list .task-actions .delete-btn { color: var(--accent-color); }
+        .add-task-form .form-group { margin-bottom: 15px; }
+        .add-task-form label { color: var(--soft-white); font-weight: 600; display: block; margin-bottom: 5px; }
+        .add-task-form input[type="text"], .add-task-form input[type="date"], .add-task-form select, .add-task-form textarea { width: 100%; padding: 15px; box-sizing: border-box; border: 1px solid #777; border-radius: 8px; margin-top: 5px; background: var(--input-background-color); color: var(--soft-white); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4); appearance: none; }
+        .add-task-form select option { background-color: #333; color: var(--soft-white);}
+        .add-task-form textarea { resize: vertical; min-height: 120px; }
+        .add-task-form .form-row { display: flex; gap: 20px; }
+        .add-task-form .form-row .form-group { flex: 1; }
+        .add-task-form button { background-color: var(--accent-color); color: #333; font-size: 1.2em; font-weight: bold; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 20px; transition: background-color 0.3s; }
+        .add-task-form button:hover { background-color: #ffcc44;}
+        @media (max-width: 768px) {
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .navbar { flex-direction: column; }
+            .navbar-nav { margin-top: 10px; justify-content: center; flex-wrap: wrap; }
+            .navbar a { margin: 5px; }
+            .add-task-form .form-row { flex-direction: column; gap: 0; }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const TOKEN_KEY = 'authToken';
+        const ROLE_KEY = 'userRole';
+        const TASKS_KEY = 'studentTasks'; 
+        const LOGGED_IN_USER_KEY = 'loggedInUser';
+
+        // --- PHOTO CHANGE CONSTANT ---
+        const APP_BACKGROUND_IMAGE = 'lib.jpeg'; 
+
+        function setAppBackground() {
+            document.documentElement.style.setProperty('--app-bg-url', `url('${APP_BACKGROUND_IMAGE}')`);
+        }
+        // -----------------------------
+
+        const isLoggedIn = localStorage.getItem(TOKEN_KEY) === 'valid';
+        const userRole = localStorage.getItem(ROLE_KEY);
+
+        if (!isLoggedIn || userRole !== 'Student') {
+            alert('Access Denied. Please log in as a student.');
+            window.location.href = 'Login.html'; 
+        }
+
+        const loggedInUserRaw = localStorage.getItem(LOGGED_IN_USER_KEY);
+        const loggedInUser = loggedInUserRaw ? JSON.parse(loggedInUserRaw) : {};
+        const isAdmin = loggedInUser.role === 'Admin';
+    </script>
+
+    <nav class="navbar">
+        <a href="#" class="logo">Student To-Do</a>
+        <div class="navbar-nav">
+            <a href="#" class="nav-item active" data-section="dashboard">📊 Dashboard</a>
+            <a href="#" class="nav-item" data-section="tasks">📝 Tasks</a>
+            <a href="#" class="nav-item" data-section="addTask">➕ Add Task</a>
+            <a href="#" class="nav-item" data-section="history">🗑️ History</a>
+            <a href="#" class="nav-item logout" id="logoutBtn">🚪 Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <section id="dashboard" class="content-section">
+            <div class="section-header">
+                <h2>📊 Task Overview</h2>
+                <p>Welcome, <span style="color: var(--accent-color);">${loggedInUser.fullName || 'Student'}</span>! Your current productivity snapshot.</p>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="dashboard-card total"><h3 style="color: black;">Total Tasks</h3><div class="value" id="totalTasks">0</div></div>
+                <div class="dashboard-card completed"><h3 style="color: black;">Completed</h3><div class="value" id="completedTasks">0</div></div>
+                <div class="dashboard-card pending"><h3 style="color: black;">Pending</h3><div class="value" id="pendingTasks">0</div></div>
+                <div class="dashboard-card progress"><h3 style="color: black;">Progress</h3><div class="value" id="taskProgress">0%</div></div>
+            </div>
+        </section>
+        
+        <section id="tasks" class="content-section" style="display: none;">
+            <div class="section-header"><h2>📝 Active Tasks</h2><p>The assignments on your desk.</p></div>
+            <ul class="task-list" id="activeTaskList"></ul>
+        </section>
+
+        <section id="addTask" class="content-section" style="display: none;">
+            <div class="section-header"><h2>✍️ Add New Task</h2><p>Fill out the details to catalogue your next assignment.</p></div>
+            <div class="add-task-form">
+                <div class="form-group"><label for="taskTitle">Title <span style="color: red;">*</span></label><input type="text" id="taskTitle" placeholder="e.g., Final Project Submission" required></div>
+                <div class="form-group"><label for="taskSubject">Subject</label><input type="text" id="taskSubject" placeholder="e.g., Computer Science 101"></div>
+                <div class="form-row">
+                    <div class="form-group"><label for="taskDueDate">Due Date</label><input type="date" id="taskDueDate"></div>
+                    <div class="form-group"><label for="taskPriority">Priority</label><select id="taskPriority"><option value="Low">Low</option><option value="Medium" selected>Medium</option><option value="High">High</option></select></div>
+                </div>
+                <div class="form-group"><label for="taskCategory">Category</label><select id="taskCategory"><option value="Assignment">Assignment</option><option value="Exam Prep">Exam Prep</option><option value="Reading">Reading</option><option value="Project">Project</option><option value="Other">Other</option></select></div>
+                <div class="form-group"><label for="taskDescription">Description</label><textarea id="taskDescription" placeholder="Detailed notes about the task, like an annotation..."></textarea></div>
+                <button onclick="addNewTask()">Create Task</button>
+            </div>
+        </section>
+
+        <section id="history" class="content-section" style="display: none;">
+            <div class="section-header"><h2>🗑️ Task History</h2><p>Completed and archived items, bound for the records.</p></div>
+            <ul class="history-list" id="historyTaskList"></ul>
+        </section>
+
+    </div> 
+    <script>
+        let tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
+
+        function saveTasks() {
+            localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+        }
+        
+        function createTaskHtml(task, isHistory) {
+            const priorityLabel = `<span class="priority-label ${task.priority}">${task.priority}</span>`;
+            
+            const deleteButtonHtml = isAdmin ? `<button class="delete-btn" onclick="deleteTask('${task.id}', ${isHistory})">🗑️</button>` : '';
+
+            const actionButtons = isHistory 
+                ? deleteButtonHtml 
+                : `<button class="complete-btn" onclick="toggleTaskCompletion('${task.id}')">${task.completed ? '✅' : '☑️'}</button>
+                   ${deleteButtonHtml}`; 
+
+            const dueDateText = task.dueDate ? `Due: ${task.dueDate}` : 'No Due Date';
+
+            return `
+                <div class="task-details">
+                    <strong style="color: var(--accent-color);">${task.title}</strong>
+                    <div style="font-size: 0.9em; color: #ccc;">
+                        ${isHistory ? 'Completed' : priorityLabel} | ${dueDateText} | Subject: ${task.subject || 'N/A'}
+                    </div>
+                </div>
+                <div class="task-actions">
+                    ${actionButtons}
+                </div>
+            `;
+        }
+        
+        function renderDashboard() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const pending = total - completed;
+            const progress = total > 0 ? ((completed / total) * 100).toFixed(0) : 0;
+
+            document.getElementById('totalTasks').textContent = total;
+            document.getElementById('completedTasks').textContent = completed;
+            document.getElementById('pendingTasks').textContent = pending;
+            document.getElementById('taskProgress').textContent = `${progress}%`;
+        }
+        
+        function renderActiveTasks() {
+            const list = document.getElementById('activeTaskList');
+            list.innerHTML = '';
+            const activeTasks = tasks.filter(t => !t.completed);
+
+            if (activeTasks.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: var(--soft-white);">No active tasks! Time to relax or add a new one.</p>';
+                return;
+            }
+
+            activeTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'task-item';
+                li.innerHTML = createTaskHtml(task, false);
+                list.appendChild(li);
+            });
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyTaskList');
+            list.innerHTML = '';
+            const historyTasks = tasks.filter(t => t.completed);
+
+            if (historyTasks.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: var(--soft-white);">No completed tasks yet.</p>';
+                return;
+            }
+
+            historyTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'task-item completed';
+                li.innerHTML = createTaskHtml(task, true);
+                list.appendChild(li);
+            });
+        }
+
+        function addNewTask() {
+            const title = document.getElementById('taskTitle').value.trim();
+            const subject = document.getElementById('taskSubject').value.trim();
+            const dueDate = document.getElementById('taskDueDate').value;
+            const priority = document.getElementById('taskPriority').value;
+            const category = document.getElementById('taskCategory').value;
+            const description = document.getElementById('taskDescription').value.trim();
+
+            if (!title) {
+                alert("Task Title is required!");
+                return;
+            }
+
+            const newTask = {
+                id: Date.now().toString(),
+                title,
+                subject,
+                dueDate,
+                priority,
+                category,
+                description,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+
+            tasks.push(newTask);
+            saveTasks();
+            document.getElementById('addTask').querySelector('.add-task-form').reset();
+            alert("Task added successfully!");
+            switchSection('tasks');
+        }
+
+        function toggleTaskCompletion(id) {
+            const taskIndex = tasks.findIndex(t => t.id === id);
+            if (taskIndex !== -1) {
+                tasks[taskIndex].completed = !tasks[taskIndex].completed;
+                saveTasks();
+                renderActiveTasks();
+                renderHistory();
+                renderDashboard();
+            }
+        }
+
+        function deleteTask(id, isHistory = false) {
+            if (!isAdmin) {
+                alert("Only Admin accounts have the right to permanently delete tasks.");
+                return; 
+            }
+            
+            const task = tasks.find(t => t.id === id);
+            const confirmMsg = isHistory 
+                ? `(ADMIN ACTION) Are you sure you want to permanently delete "${task.title}" from history?` 
+                : `(ADMIN ACTION) Are you sure you want to delete "${task.title}"?`;
+
+            if (confirm(confirmMsg)) {
+                tasks = tasks.filter(t => t.id !== id);
+                saveTasks();
+                renderActiveTasks();
+                renderHistory();
+                renderDashboard();
+                alert("Task deleted.");
+            }
+        }
+        
+        function switchSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId).style.display = 'block';
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeNavItem = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+            if (activeNavItem) {
+                activeNavItem.classList.add('active');
+            }
+
+            if (sectionId === 'dashboard') { renderDashboard(); } 
+            else if (sectionId === 'tasks') { renderActiveTasks(); } 
+            else if (sectionId === 'history') { renderHistory(); }
+        }
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.id !== 'logoutBtn') { 
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchSection(item.dataset.section);
+                });
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm('Are you sure you want to log out?')) {
+                localStorage.removeItem(TOKEN_KEY);
+                localStorage.removeItem(ROLE_KEY);
+                localStorage.removeItem(LOGGED_IN_USER_KEY); 
+                window.location.href = 'Login.html';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+             setAppBackground();
+             renderDashboard();
+             renderActiveTasks();
+             renderHistory(); 
+             switchSection('dashboard'); 
+        });
+    </script>
+</body>
+</html>

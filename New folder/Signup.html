@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account</title>
+    <style>
+        /* --- GLOBAL THEME & BACKGROUND SETTINGS --- */
+        :root {
+            /* Image URL is injected by JavaScript */
+            --box-background-color: rgba(69, 49, 49, 0.95); 
+            --input-background-color: rgba(94, 66, 66, 0.8);
+            --accent-color: #ffb800; 
+            --main-text-color: #f0f0f0;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            color: var(--main-text-color);
+            /* Uses the property set by JavaScript */
+            background-image: url(lib.jpg); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-blend-mode: multiply;
+            background-color: rgba(0, 0, 0, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            padding: 1rem;
+            margin: 0; 
+        }
+        .auth-box { 
+            background: var(--box-background-color); padding: 40px; 
+            border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); 
+            width: 450px; text-align: center; 
+        }
+        h2 { color: var(--accent-color); margin-bottom: 5px; text-shadow: 1px 1px 3px #000; }
+        p.subheader { color: var(--main-text-color); font-size: 14px; margin-bottom: 25px; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .input-row input, .input-row select, 
+        input:not(.input-row input) { 
+            background: var(--input-background-color); color: var(--main-text-color);
+            padding: 12px; border: 1px solid #777; border-radius: 6px; 
+            box-sizing: border-box; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        .input-row select option { background-color: #333; color: var(--main-text-color);}
+        .input-row input, .input-row select { flex-grow: 1; }
+        input:not(.input-row input) { width: 95%; margin: 10px 0 15px 0; }
+        button { background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; transition: background-color 0.3s; }
+        button:hover { background-color: #218838; }
+        .link { color: var(--accent-color); cursor: pointer; text-decoration: none; margin-top: 15px; display: block; text-align: center; }
+        #message { color: #dc3545; font-weight: bold; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <h2>📚 Create a New Account</h2>
+        <p class="subheader">It's quick and easy.</p>
+        
+        <div class="input-row">
+            <input type="text" id="first-name" placeholder="First name">
+            <input type="text" id="last-name" placeholder="Last name">
+        </div>
+
+        <input type="email" id="email-input" placeholder="Email">
+        <input type="password" id="password-input" placeholder="New password">
+
+        <input type="text" id="student-id" placeholder="Student ID (e.g., S001)" required>
+        <input type="text" id="course-input" placeholder="Course/Program (e.g., Computer Science)" required>
+
+        <p style="text-align: left; margin: 15px 0 5px; color: var(--main-text-color); font-size: 14px;">Birthday</p>
+        <div class="input-row">
+            <select id="bday-month"></select>
+            <select id="bday-day"></select>
+            <select id="bday-year"></select>
+        </div>
+        
+        <p style="text-align: left; margin: 15px 0 5px; color: var(--main-text-color); font-size: 14px;">Select Role</p>
+        <div class="input-row">
+            <select id="user-role">
+                <option value="Student">Student</option>
+                <option value="Admin">Admin</option>
+            </select>
+        </div>
+
+        <button onclick="handleSignup()">Sign Up</button>
+        
+        <div id="message"></div>
+        <a class="link" href="Login.html">Already have an account? Login.</a>
+    </div>
+
+    <script>
+        const USER_ACCOUNT_KEY = 'todoUserAccount';
+        
+        // --- PHOTO CHANGE CONSTANT ---
+        const APP_BACKGROUND_IMAGE = 'lib.jpeg'; 
+
+        function setAppBackground() {
+            document.documentElement.style.setProperty('--app-bg-url', `url('${APP_BACKGROUND_IMAGE}')`);
+        }
+        // -----------------------------
+
+        function populateBirthdaySelectors() {
+            const monthSelect = document.getElementById('bday-month');
+            const daySelect = document.getElementById('bday-day');
+            const yearSelect = document.getElementById('bday-year');
+
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            months.forEach((m, i) => {
+                monthSelect.options.add(new Option(m, i + 1));
+            });
+
+            for (let i = 1; i <= 31; i++) {
+                daySelect.options.add(new Option(i, i));
+            }
+
+            const currentYear = new Date().getFullYear();
+            for (let i = currentYear; i >= 1905; i--) {
+                yearSelect.options.add(new Option(i, i));
+            }
+        }
+
+        populateBirthdaySelectors();
+
+        function handleSignup() {
+            const firstName = document.getElementById('first-name').value.trim();
+            const lastName = document.getElementById('last-name').value.trim();
+            const email = document.getElementById('email-input').value.trim();
+            const password = document.getElementById('password-input').value;
+            const studentId = document.getElementById('student-id').value.trim();
+            const course = document.getElementById('course-input').value.trim();
+            const bday = `${document.getElementById('bday-year').value}-${document.getElementById('bday-month').value}-${document.getElementById('bday-day').value}`;
+            const role = document.getElementById('user-role').value;
+            const messageDiv = document.getElementById('message');
+
+            if (!firstName || !lastName || !email || password.length < 6 || !role || !studentId || !course) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = "Please fill in all required fields (including Student ID and Course).";
+                return;
+            }
+            
+            const userData = {
+                fullName: `${firstName} ${lastName}`,
+                email: email,
+                password: password,
+                studentId: studentId,
+                course: course,
+                birthday: bday,
+                role: role,
+                id: Date.now().toString()
+            };
+            
+            const storedUsersRaw = localStorage.getItem(USER_ACCOUNT_KEY);
+            let users = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+            
+            if (users.some(user => user.email === userData.email)) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = "An account with this email already exists. Please login.";
+                return;
+            }
+
+            users.push(userData);
+            localStorage.setItem(USER_ACCOUNT_KEY, JSON.stringify(users));
+
+            messageDiv.style.color = 'green';
+            messageDiv.textContent = `Account created as ${userData.role}! Redirecting to login...`;
+
+            setTimeout(() => {
+                window.location.href = 'Login.html';
+            }, 1500);
+        }
+        
+        document.addEventListener('DOMContentLoaded', setAppBackground);
+    </script>
+</body>
+</html>
